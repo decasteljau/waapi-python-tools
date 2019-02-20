@@ -1,5 +1,7 @@
 # auto-midi-map
 
+**Work-in-progress** - The project does not work yet.
+
 Automatically structure the children of Wwise container and set the MIDI properties based on a naming convention.
 
 ## Overview

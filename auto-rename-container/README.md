@@ -2,8 +2,28 @@
 
 Automatically rename a container based on the name of its children.
 
-## Overview
+## Usage
 
-It is possible to implement a sample-based MIDI instrument in Wwise directly in the Actor-Mixer hierarchy. 
-However, it can be a tedious task. This tool aims to ease the setup of such complex structures by setting up
-automatically the structure for you after you imported the sounds.
+### Add the command to Wwise
+
+Refer to [Defining custom commands](https://www.audiokinetic.com/library/edge/?source=SDK&id=defining__custom__commands.html) in the Wwise SDK documentation.
+
+### Example command definition
+```json
+{
+    "commands": [
+        {
+            "id": "ak.auto_rename_container",
+            "displayName": "Auto Rename Container",
+            "defaultShortcut": "Alt+R",
+            "program": "pyw",
+            "startMode": "SingleSelectionSingleProcess",
+            "args": "C:\\waapi-python-tools\\auto-rename-container",
+            "cwd": "",
+            "contextMenu": {
+                "basePath": "Add-ons"
+            }
+        }
+    ]
+}
+```
