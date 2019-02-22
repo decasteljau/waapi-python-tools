@@ -72,7 +72,16 @@ try:
 
             i += 1
 
-        pprint(children)
+        # pprint(children)
+        for child in children:
+            for key, value in child.items():
+                if key.startswith('@'):
+                    setProperty = {
+                        'object': child['id'],
+                        'property': key[1:],
+                        'value': value
+                    }
+                    children = client.call("ak.wwise.core.object.setProperty", setProperty)
 
 
 except CannotConnectToWaapiException:
