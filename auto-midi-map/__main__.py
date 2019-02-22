@@ -3,16 +3,35 @@
 from waapi import WaapiClient, CannotConnectToWaapiException
 from pprint import pprint
 import sys, re, math
-notes = ['c','c#','d', 'd#', 'e', 'f', 'f#', 'g', 'g#', 'a', 'a#', 'b']
+notes = {
+    'c': 0,
+    'c#': 1,
+    'db': 1,
+    'd': 2,
+    'd#': 3,
+    'eb': 3,
+    'e': 4,
+    'f': 5,
+    'f#': 6,
+    'gb': 6,
+    'g': 7,
+    'g#:': 8,
+    'ab:': 8,
+    'a': 9,
+    'a#': 10,
+    'bb': 10,
+    'b': 11
+    }
 
 def note_name_to_number(name):
     note = 60
-    match = re.search('(?P<letter>[cdefgabCDEFGAB]#?)(?P<octave>[0-9]+)', name)
+    match = re.search('(?P<letter>[cdefgabCDEFGAB][#b]?)(?P<octave>[0-9]+)', name)
     if match is not None:
         letter = match.group('letter').lower()
         octave = int(match.group('octave'))
 
-        note = notes.index(letter)
+        # Find the note number
+        note = notes[letter]
         note = note + (octave + 2) * 12
         
     return note
@@ -45,7 +64,7 @@ try:
         for child in children:
             name = child['name']
 
-            match = re.search('(?P<note>[cdefgabCDEFGAB]#?[0-9]+)', name)
+            match = re.search('(?P<note>[cdefgabCDEFGAB][#b]?[0-9]+)', name)
             if match is None:
                 errors.append('Could not find a note in ' + name)
             else:
@@ -72,7 +91,7 @@ try:
 
             i += 1
 
-        # pprint(children)
+        pprint(children)
         for child in children:
             for key, value in child.items():
                 if key.startswith('@'):
@@ -81,7 +100,7 @@ try:
                         'property': key[1:],
                         'value': value
                     }
-                    children = client.call("ak.wwise.core.object.setProperty", setProperty)
+                    # client.call("ak.wwise.core.object.setProperty", setProperty)
 
 
 except CannotConnectToWaapiException:
