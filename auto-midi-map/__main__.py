@@ -2,7 +2,9 @@
 
 from waapi import WaapiClient, CannotConnectToWaapiException
 from pprint import pprint
-import sys, re, math
+from collections import defaultdict
+import sys, re, math, os
+
 notes = {
     'c': 0,
     'c#': 1,
@@ -58,21 +60,62 @@ try:
         options = {
             "return": ['id', 'name','type']
         }
-        children = client.call("ak.wwise.core.object.get", args, options=options)['return']
+        sounds = client.call("ak.wwise.core.object.get", args, options=options)['return']
 
+        groups = defaultdict(list)
         errors = []
-        for child in children:
+        for child in sounds:
             name = child['name']
 
             match = re.search('(?P<note>[cdefgabCDEFGAB][#b]?[0-9]+)', name)
             if match is None:
                 errors.append('Could not find a note in ' + name)
             else:
-                child['note'] = note_name_to_number(match.group('note'))
+                note_number = note_name_to_number(match.group('note'))
+                child['note'] = note_number
+                groups[note_number].append(child)
 
         if len(errors) > 0:
             raise Exception('\n'.join(errors))
-        
+
+        client.call("ak.wwise.core.undo.beginGroup")
+
+        children = []
+
+        # For each group, create a container and move it in
+        for note, elements in groups.items():
+
+            if len(elements) == 1:
+                children.append(elements[0])
+            else:
+                # Find common name for parent
+                names = list(map(lambda object: object['name'], elements))
+                common = os.path.commonprefix(names)
+                common = common.rstrip('_ -')
+
+                if not common:
+                    common = str(note)
+
+                create_args = {
+                    "parent": selected[0]['id'], 
+                    "type": 'RandomSequenceContainer', 
+                    "name": common, 
+                    "onNameConflict": "rename"
+                }
+
+                container = client.call("ak.wwise.core.object.create", create_args)
+                container['note'] = note
+
+                # Move sounds to the new container
+                for element in elements:
+                    move_args = {
+                        'object': element['id'],
+                        'parent': container['id']
+                    }
+                    client.call("ak.wwise.core.object.move", move_args)
+
+                children.append(container)
+
         # Try to fill whole between notes
         children.sort(key=lambda object: object['note'])
         
@@ -83,10 +126,13 @@ try:
             if i != 0:
                 min = children[i - 1]['@MidiKeyFilterMax'] + 1
             if i != len(children) - 1:
-                max = children[i]['note'] + math.floor((children[i + 1]['note'] - children[i]['note']) / 2)
+                max = child['note'] + math.floor((children[i + 1]['note'] - children[i]['note']) / 2)
 
             child['@MidiKeyFilterMin'] = min
             child['@MidiKeyFilterMax'] = max
+            child['@EnableMidiNoteTracking'] = 1
+            child['@MidiTrackingRootNote'] = child['note']
+            child['@OverrideMidiNoteTracking'] = 1
             max = 127
 
             i += 1
@@ -95,12 +141,23 @@ try:
         for child in children:
             for key, value in child.items():
                 if key.startswith('@'):
-                    setProperty = {
+                    set_property_args = {
                         'object': child['id'],
                         'property': key[1:],
                         'value': value
                     }
-                    # client.call("ak.wwise.core.object.setProperty", setProperty)
+                    client.call("ak.wwise.core.object.setProperty", set_property_args)
+        
+        # Enable note tracking
+        # set_property_args = {
+        #     'object': selected[0]['id'],
+        #     'property': 'EnableMidiNoteTracking',
+        #     'value': 1
+        # }        
+        # client.call("ak.wwise.core.object.setProperty", set_property_args)
+
+        client.call("ak.wwise.core.undo.endGroup", { 'displayName': 'Auto MIDI map'})
+
 
 
 except CannotConnectToWaapiException:
