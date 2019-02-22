@@ -42,15 +42,13 @@ try:
     # Connecting to Waapi using default URL
     with WaapiClient() as client:
 
-
-        # Simple RPC
+        # Obtain the selection
         selected  = client.call("ak.wwise.ui.getSelectedObjects")['objects']
 
         if len(selected) == 0:
             raise Exception('Please select an object')
 
-        # RPC with options
-        # return an array of all children objects in the default actor-mixer work-unit
+        # Get all children objects for the selection
         args = {
             "from": {"id": [selected[0]['id']]},
             "transform": [
@@ -62,6 +60,7 @@ try:
         }
         sounds = client.call("ak.wwise.core.object.get", args, options=options)['return']
 
+        # Parse the sound names and find the MIDI notes
         groups = defaultdict(list)
         errors = []
         for child in sounds:
@@ -78,6 +77,7 @@ try:
         if len(errors) > 0:
             raise Exception('\n'.join(errors))
 
+        # Start the work
         client.call("ak.wwise.core.undo.beginGroup")
 
         children = []
@@ -116,7 +116,7 @@ try:
 
                 children.append(container)
 
-        # Try to fill whole between notes
+        # Try to fill whole between notes & prepare midi settings
         children.sort(key=lambda object: object['note'])
         
         i = 0
@@ -137,7 +137,7 @@ try:
 
             i += 1
 
-        pprint(children)
+        # Set properties
         for child in children:
             for key, value in child.items():
                 if key.startswith('@'):
@@ -148,16 +148,7 @@ try:
                     }
                     client.call("ak.wwise.core.object.setProperty", set_property_args)
         
-        # Enable note tracking
-        # set_property_args = {
-        #     'object': selected[0]['id'],
-        #     'property': 'EnableMidiNoteTracking',
-        #     'value': 1
-        # }        
-        # client.call("ak.wwise.core.object.setProperty", set_property_args)
-
         client.call("ak.wwise.core.undo.endGroup", { 'displayName': 'Auto MIDI map'})
-
 
 
 except CannotConnectToWaapiException:
