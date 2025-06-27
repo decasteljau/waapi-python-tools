@@ -1,3 +1,15 @@
+# Repository Moved
+
+**This repository has been moved to a new location.**
+
+Development and maintenance of the `waapi-python-tools` are now happening at the new repository. Please update your bookmarks and git remotes.
+
+**New Repository:** [**`ak-brodrigue/waapi-python-tools`**](https://github.com/ak-brodrigue/waapi-python-tools)
+
+This repository is now archived and read-only.
+
+---
+
 # waapi-python-tools
 
 This repository is a collection of tools to be used inside Audiokinetic Wwise. The tools use WAAPI (Wwise Authoring API) and Python to perform several automated tasks.
